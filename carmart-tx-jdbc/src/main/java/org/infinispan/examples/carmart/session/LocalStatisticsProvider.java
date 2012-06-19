@@ -21,6 +21,9 @@
  */
 package org.infinispan.examples.carmart.session;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -37,6 +40,11 @@ import org.infinispan.notifications.cachelistener.event.CacheEntryCreatedEvent;
 import org.infinispan.notifications.cachelistener.event.CacheEntryRemovedEvent;
 import org.infinispan.notifications.cachelistener.event.CacheEntryVisitedEvent;
 
+import com.twilio.sdk.TwilioRestClient;
+import com.twilio.sdk.TwilioRestException;
+import com.twilio.sdk.resource.factory.SmsFactory;
+import com.twilio.sdk.resource.instance.Account;
+
 @Named("stats")
 @ApplicationScoped //use application scope so that we can get overall statistics
 @Listener
@@ -44,6 +52,14 @@ public class LocalStatisticsProvider implements StatisticsProvider {
 
     @Inject
     private CacheContainerProvider provider;
+    
+    TwilioRestClient client = null;
+    
+    //temp stuff
+    private static String TWILIO_KEY = null;
+    private static String TWILIO_PASSWORD = null;
+    prviate static String PHONE_NUMBER = null;
+    		
 
     int visits;
     int creations;
@@ -57,6 +73,17 @@ public class LocalStatisticsProvider implements StatisticsProvider {
     @CacheEntryCreated
     public void print(CacheEntryCreatedEvent event) {
         creations++;
+        
+        Map<String, String> smsParams = new HashMap<String, String>();
+	    smsParams.put("To", PHONE_NUMBER); // Replace with a valid phone number
+	    smsParams.put("From", "4155992671"); // Replace with a valid phone number in your account
+	    smsParams.put("Body", "A cache entry got created" + event.getKey().toString());
+	    try {
+			this.getTwilioSmsFactory().create(smsParams);
+		} catch (TwilioRestException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
     }
     
     @CacheEntryVisited
@@ -79,5 +106,21 @@ public class LocalStatisticsProvider implements StatisticsProvider {
 
     public String getRemovals() {
         return String.valueOf(removals);
+    }
+    
+    private SmsFactory getTwilioSmsFactory () {
+    	
+    	if (client == null)    
+    		client = new TwilioRestClient(TWILIO_KEY, TWILIO_PASSWORD);
+
+  	    Account mainAccount = client.getAccount(); 	    
+    	SmsFactory smsFactory = mainAccount.getSmsFactory();
+    	return smsFactory;
+    	    
+    	    /*Map<String, String> smsParams = new HashMap<String, String>();
+    	    smsParams.put("To", "5105551212"); // Replace with a valid phone number
+    	    smsParams.put("From", "(510) 555-1212"); // Replace with a valid phone number in your account
+    	    smsParams.put("Body", "This is a test message!");
+    	    smsFactory.create(smsParams);*/
     }
 }
