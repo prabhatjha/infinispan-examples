@@ -58,7 +58,7 @@ public class LocalStatisticsProvider implements StatisticsProvider {
     //temp stuff
     private static String TWILIO_KEY = null;
     private static String TWILIO_PASSWORD = null;
-    prviate static String PHONE_NUMBER = null;
+    private static String PHONE_NUMBER = null;
     		
 
     int visits;
